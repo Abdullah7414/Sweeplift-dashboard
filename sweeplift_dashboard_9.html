@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sweeplift — Email Marketing Report</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F7F7F5;color:#1a1a1a;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:#fff;border-bottom:1px solid #E5E5E2;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .header-logo{font-size:16px;font-weight:600;}
+  .header-logo span{font-weight:400;color:#888;}
+  .header-date{font-size:12px;color:#888;}
+
+  .container{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+  .section-label{font-size:11px;font-weight:600;color:#999;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem;margin-top:2rem;}
+
+  /* BADGES */
+  .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;white-space:nowrap;}
+  .badge-active{background:#E6F4EA;color:#1E7E34;}
+  .badge-paused{background:#FFF3E0;color:#E65100;}
+  .badge-new{background:#E3F2FD;color:#1565C0;}
+  .badge-completed{background:#F3E5F5;color:#6A1B9A;}
+
+  /* TOTALS */
+  .totals-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;background:#fff;border-radius:12px;border:1px solid #E5E5E2;padding:1.25rem;margin-bottom:1.5rem;}
+  .total-item{text-align:center;padding:.5rem 0;}
+  .total-val{font-size:24px;font-weight:600;}
+  .total-lbl{font-size:11px;color:#888;margin-top:3px;}
+
+  /* OVERVIEW GRID */
+  .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:2rem;}
+  .overview-card{background:#fff;border:1px solid #E5E5E2;border-radius:12px;padding:1rem 1.25rem;position:relative;}
+  .overview-card.flag-bad{border:2px solid #EF5350;}
+  .flag-tag{position:absolute;top:-10px;left:12px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:#EF5350;color:#fff;}
+  .ov-client{font-size:13px;font-weight:600;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between;}
+  .ov-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #F0F0EE;}
+  .ov-row:last-child{border-bottom:none;}
+  .ov-label{color:#888;}
+  .ov-val{font-weight:500;}
+  .ov-good{color:#1E7E34;}
+  .ov-bad{color:#C62828;}
+
+  /* TABS */
+  .client-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;}
+  .tab{padding:7px 16px;border-radius:20px;border:1px solid #E5E5E2;font-size:13px;cursor:pointer;background:#fff;color:#666;}
+  .tab:hover{border-color:#aaa;}
+  .tab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+  .tab.tab-bad{border-color:#EF5350;}
+  .client-panel{display:none;}
+  .client-panel.active{display:block;}
+
+  /* CAMPAIGN CARD */
+  .campaign-card{background:#fff;border:1px solid #E5E5E2;border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+  .campaign-card.flag-bad{border:2px solid #EF5350;}
+  .campaign-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:10px;}
+  .campaign-title{font-size:14px;font-weight:600;}
+  .campaign-meta{font-size:12px;color:#888;margin-top:3px;}
+  .flag-box-bad{background:#FFEBEE;border:1px solid #EF9A9A;border-radius:8px;padding:.65rem 1rem;font-size:12px;color:#C62828;margin-bottom:.75rem;}
+  .warn-box{background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:.65rem 1rem;font-size:12px;color:#E65100;margin-top:.75rem;}
+
+  /* OPEN RATE */
+  .open-rate-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+  .or-box{background:#F7F7F5;border-radius:10px;padding:1rem 1.25rem;}
+  .or-box-label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .or-box-num{font-size:28px;font-weight:600;line-height:1;}
+  .or-box-pct{display:inline-block;font-size:12px;font-weight:600;color:#fff;background:#00897B;border-radius:20px;padding:2px 9px;margin-top:6px;}
+  .or-box-sub{font-size:11px;color:#888;margin-top:4px;}
+
+  /* METRICS */
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem;}
+  .metric{background:#F7F7F5;border-radius:8px;padding:.85rem 1rem;}
+  .metric-label{font-size:11px;color:#888;margin-bottom:3px;}
+  .metric-value{font-size:20px;font-weight:600;}
+  .metric-sub{font-size:11px;color:#888;margin-top:2px;}
+  .m-good{color:#1E7E34;}
+  .m-bad{color:#C62828;}
+
+  /* STEP TABLE */
+  .divider{border:none;border-top:1px solid #F0F0EE;margin:1rem 0;}
+  .steps-label{font-size:12px;font-weight:600;color:#888;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em;}
+  .step-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .step-table th{text-align:left;color:#888;font-weight:600;padding:6px 8px;border-bottom:1px solid #F0F0EE;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  .step-table td{padding:7px 8px;border-bottom:1px solid #F0F0EE;}
+  .step-table tr:last-child td{border-bottom:none;}
+  .step-table tr:hover td{background:#FAFAF8;}
+  .step-table tr.best td{background:#E6F4EA;}
+  .step-table tr.best td:first-child{border-left:3px solid #1E7E34;}
+  .best-badge{display:inline-block;font-size:10px;font-weight:700;background:#1E7E34;color:#fff;padding:1px 7px;border-radius:20px;margin-left:6px;}
+  .subj{color:#666;font-size:11px;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .placeholder-card{background:#F7F7F5;border:1px dashed #D0D0CE;border-radius:10px;padding:2rem;text-align:center;color:#999;font-size:13px;}
+  .progress-wrap{margin-bottom:1rem;}
+  .progress-label{font-size:11px;color:#888;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .progress-bg{background:#E5E5E2;border-radius:4px;height:6px;}
+  .progress-fill{height:6px;border-radius:4px;background:#1565C0;}
+  .footer{margin-top:3rem;padding:1.5rem;text-align:center;font-size:12px;color:#bbb;border-top:1px solid #E5E5E2;}
+
+  /* =================== ADMIN PANEL =================== */
+  .admin-trigger{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#1a1a1a;color:#fff;border:none;font-size:20px;cursor:pointer;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+  .admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;overflow-y:auto;}
+  .admin-overlay.open{display:block;}
+  .admin-modal{background:#fff;border-radius:16px;max-width:780px;margin:2rem auto;padding:2rem;}
+  .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+  .admin-title{font-size:18px;font-weight:600;}
+  .admin-close{background:none;border:none;font-size:22px;cursor:pointer;color:#888;}
+  .admin-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:1px solid #E5E5E2;padding-bottom:1rem;}
+  .admin-tab{padding:6px 14px;border-radius:20px;border:1px solid #E5E5E2;font-size:13px;cursor:pointer;background:#fff;color:#666;}
+  .admin-tab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+  .admin-section{display:none;}
+  .admin-section.active{display:block;}
+  .form-group{margin-bottom:1rem;}
+  .form-label{font-size:12px;font-weight:600;color:#555;margin-bottom:4px;display:block;}
+  .form-input{width:100%;padding:8px 12px;border:1px solid #E5E5E2;border-radius:8px;font-size:13px;outline:none;}
+  .form-input:focus{border-color:#1a1a1a;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .form-select{width:100%;padding:8px 12px;border:1px solid #E5E5E2;border-radius:8px;font-size:13px;outline:none;background:#fff;}
+  .admin-save-btn{background:#1a1a1a;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-top:.5rem;}
+  .admin-save-btn:hover{background:#333;}
+  .admin-add-btn{background:#fff;color:#1a1a1a;border:1px solid #E5E5E2;padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:1rem;}
+  .admin-add-btn:hover{border-color:#aaa;}
+  .step-form{background:#F7F7F5;border-radius:10px;padding:1rem;margin-bottom:.75rem;position:relative;}
+  .step-remove{position:absolute;top:10px;right:10px;background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;}
+  .step-remove:hover{color:#C62828;}
+  .admin-success{background:#E6F4EA;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#1E7E34;margin-top:.75rem;display:none;}
+  .client-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;}
+  .client-list-item{display:flex;align-items:center;justify-content:space-between;background:#F7F7F5;border-radius:8px;padding:.6rem 1rem;font-size:13px;}
+  .client-list-item button{background:none;border:none;color:#1565C0;cursor:pointer;font-size:12px;}
+  .client-list-item .del-btn{color:#C62828;margin-left:8px;}
+  .section-divider{border:none;border-top:1px solid #E5E5E2;margin:1.25rem 0;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Sweeplift <span>/ Email Marketing Report</span></div>
+  <div class="header-date">May 11 – Jun 12, 2026</div>
+</div>
+
+<div class="container" id="main-dashboard">
+  <!-- Rendered by JS -->
+</div>
+
+<div class="footer" style="max-width:1100px;margin:0 auto;">Prepared by Sweeplift · Confidential</div>
+
+<!-- ADMIN TRIGGER -->
+<button class="admin-trigger" onclick="openAdmin()" title="Admin Panel">⚙</button>
+
+<!-- ADMIN OVERLAY -->
+<div class="admin-overlay" id="admin-overlay">
+  <div class="admin-modal">
+    <div class="admin-header">
+      <div class="admin-title">Admin Panel — Update Dashboard</div>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+
+    <div class="admin-tabs">
+      <div class="admin-tab active" onclick="switchAdminTab('clients',this)">Manage Clients</div>
+      <div class="admin-tab" onclick="switchAdminTab('campaign',this)">Update Campaign</div>
+      <div class="admin-tab" onclick="switchAdminTab('addclient',this)">Add New Client</div>
+    </div>
+
+    <!-- MANAGE CLIENTS -->
+    <div class="admin-section active" id="admin-clients">
+      <div style="font-size:13px;color:#888;margin-bottom:1rem;">Select a client to edit or remove them from the dashboard.</div>
+      <div class="client-list" id="client-list-admin"></div>
+    </div>
+
+    <!-- UPDATE CAMPAIGN -->
+    <div class="admin-section" id="admin-campaign">
+      <div class="form-group">
+        <label class="form-label">Select client</label>
+        <select class="form-select" id="edit-client-select" onchange="loadClientCampaigns()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select campaign</label>
+        <select class="form-select" id="edit-campaign-select" onchange="loadCampaignForm()"></select>
+      </div>
+      <hr class="section-divider">
+      <div id="campaign-edit-form" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Campaign name</label><input class="form-input" id="ef-name"></div>
+          <div class="form-group"><label class="form-label">Status</label>
+            <select class="form-select" id="ef-status">
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="new">New / Just launched</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group"><label class="form-label">List size</label><input class="form-input" id="ef-list" type="number"></div>
+          <div class="form-group"><label class="form-label">Emails sent</label><input class="form-input" id="ef-sent" type="number"></div>
+          <div class="form-group"><label class="form-label">People contacted</label><input class="form-input" id="ef-contacted" type="number"></div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group"><label class="form-label">Total opens</label><input class="form-input" id="ef-totalopens" type="number"></div>
+          <div class="form-group"><label class="form-label">Unique opens</label><input class="form-input" id="ef-uniqueopens" type="number"></div>
+          <div class="form-group"><label class="form-label">Unique replies</label><input class="form-input" id="ef-replies" type="number"></div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group"><label class="form-label">Delivery rate (%)</label><input class="form-input" id="ef-delivery" type="number" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Conversions</label><input class="form-input" id="ef-conversions" type="number"></div>
+          <div class="form-group"><label class="form-label">Interested</label><input class="form-input" id="ef-interested" type="number"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Study visitors (optional)</label><input class="form-input" id="ef-study" type="number"></div>
+          <div class="form-group"><label class="form-label">Campaign progress % (optional)</label><input class="form-input" id="ef-progress" type="number"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Warning note (optional)</label><input class="form-input" id="ef-warning" placeholder="e.g. High bounce rate detected"></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:12px;background:#FFF3E0;border-radius:8px;padding:.75rem 1rem;">
+          <input type="checkbox" id="ef-flag" style="width:16px;height:16px;cursor:pointer;">
+          <label for="ef-flag" style="font-size:13px;font-weight:500;cursor:pointer;">Flag this campaign as <strong>"Needs Attention"</strong> (shows red border + alert tag)</label>
+        </div>
+
+        <hr class="section-divider">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+          <div style="font-size:13px;font-weight:600;">Email steps</div>
+          <button class="admin-add-btn" onclick="addStepForm()">+ Add step</button>
+        </div>
+        <div id="steps-forms"></div>
+
+        <button class="admin-save-btn" onclick="saveCampaign()">Save changes</button>
+        <div class="admin-success" id="camp-success">✓ Campaign updated successfully!</div>
+      </div>
+    </div>
+
+    <!-- ADD NEW CLIENT -->
+    <div class="admin-section" id="admin-addclient">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Client name</label><input class="form-input" id="nc-name" placeholder="e.g. Acme Corp"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="nc-status">
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="new">New / Coming soon</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#888;margin-bottom:.75rem;">You can add campaigns to this client after creating them.</div>
+      <button class="admin-save-btn" onclick="addNewClient()">Add client</button>
+      <div class="admin-success" id="nc-success">✓ Client added! Switch to "Update Campaign" to add their campaigns.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+let DB = {
+  clients: [
+    {
+      id: 'sweeplift', name: 'Sweeplift',
+      campaigns: [{
+        id: 'sl-c1', name: 'SmartLead | Email | outreach-q2',
+        meta: 'May 11 – Jun 11, 2026', status: 'active',
+        listSize: 7662, sent: 20132, contacted: 7662,
+        totalOpens: 7739, uniqueOpens: 3311,
+        replies: 54, delivery: 99.22, conversions: 8,
+        interested: 3, study: 0, progress: 0, warning: '',
+        steps: [
+          {step:'Step 1', subject:'Earn $100 to learn incentive-powered lead gen', sent:3902, opens:1264, replies:15, interested:1},
+          {step:'Step 1 V1', subject:'Master incentivized lead gen (+ $100 thank-you)', sent:3760, opens:1240, replies:13, interested:0},
+          {step:'Step 2', subject:'Re: Earn $100 to learn incentive-powered lead gen', sent:6724, opens:2315, replies:14, interested:1},
+          {step:'Step 3', subject:'Re: Earn $100 to learn incentive-powered lead gen', sent:5746, opens:1801, replies:12, interested:1},
+        ]
+      }]
+    },
+    {
+      id: 'cashort', name: 'CA Short',
+      campaigns: [{
+        id: 'ca-c1', name: 'New Campaign', meta: 'In progress',
+        status: 'new', listSize: 0, sent: 0, contacted: 0,
+        totalOpens: 0, uniqueOpens: 0, replies: 0, delivery: 0,
+        conversions: 0, interested: 0, study: 0, progress: 0, warning: '', steps: []
+      }]
+    },
+    {
+      id: 'boxcast', name: 'BoxCast',
+      campaigns: [
+        {
+          id: 'bc-c1', name: 'Church Streaming Campaign', meta: 'May 11 – Jun 11, 2026',
+          status: 'paused', listSize: 6164, sent: 14425, contacted: 6164,
+          totalOpens: 3279, uniqueOpens: 1523, replies: 15, delivery: 86.46,
+          conversions: 10, interested: 0, study: 0, progress: 0,
+          warning: 'High bounce rate (31.67%) — review sender health before resuming', flagged: true,
+          steps: [
+            {step:'Step 1', subject:"$100 gift card – quick chat about your church's stream?", sent:1989, opens:340, replies:3, interested:0},
+            {step:'Step 1 V1', subject:'$100 Amazon card for 30 min on church streaming', sent:2100, opens:347, replies:0, interested:0},
+            {step:'Step 1 V2', subject:'$100 reward – is your live stream audio costing you viewers?', sent:2074, opens:356, replies:3, interested:0},
+            {step:'Step 2', subject:"Re: $100 gift card – quick chat about your church's stream?", sent:4760, opens:1139, replies:3, interested:0},
+            {step:'Step 3', subject:"Re: $100 gift card – quick chat about your church's stream?", sent:3502, opens:574, replies:6, interested:3},
+          ]
+        },
+        {
+          id: 'bc-c2', name: 'New Campaign', meta: 'Launched Jun 12, 2026',
+          status: 'new', listSize: 6543, sent: 0, contacted: 0,
+          totalOpens: 0, uniqueOpens: 0, replies: 0, delivery: 0,
+          conversions: 0, interested: 0, study: 0, progress: 0, warning: '', steps: []
+        }
+      ]
+    },
+    {
+      id: 'bravesoft', name: 'Bravesoft',
+      campaigns: [
+        {
+          id: 'bs-c1', name: 'Campaign 1 — Role IT Directors', meta: 'May 11 – Jun 11, 2026',
+          status: 'active', listSize: 1409, sent: 4820, contacted: 1409,
+          totalOpens: 3456, uniqueOpens: 942, replies: 19, delivery: 99.75,
+          conversions: 3, interested: 0, study: 0, progress: 0, warning: '',
+          steps: [
+            {step:'Step 1', subject:'24/7 Database Support—No Added Headcount – Get a $100 Gift Card', sent:157, opens:96, replies:2, interested:0},
+            {step:'Step 1 V1', subject:'30 Min = $100 + Database Management Strategy', sent:168, opens:96, replies:1, interested:0},
+            {step:'Step 2', subject:'Re: 24/7 Database Support...', sent:667, opens:424, replies:3, interested:0},
+            {step:'Step 3', subject:'Re: 24/7 Database Support...', sent:1151, opens:684, replies:6, interested:0},
+            {step:'Step 4', subject:'Re: 24/7 Database Support...', sent:1296, opens:781, replies:3, interested:0},
+            {step:'Step 5', subject:'Re: 24/7 Database Support...', sent:1381, opens:811, replies:4, interested:0},
+          ]
+        },
+        {
+          id: 'bs-c2', name: 'Campaign 2 — Prospecting (NOC)', meta: 'May 11 – Jun 11, 2026',
+          status: 'active', listSize: 5184, sent: 11309, contacted: 5184,
+          totalOpens: 5829, uniqueOpens: 2631, replies: 25, delivery: 98.38,
+          conversions: 3, interested: 0, study: 0, progress: 0, warning: '',
+          steps: [
+            {step:'Step 1', subject:'What Does 99.999% Uptime Actually Look Like?', sent:1340, opens:597, replies:2, interested:0},
+            {step:'Step 1 V1', subject:'30 Min + Up to a $100 Gift Card as a Thank You', sent:1399, opens:626, replies:5, interested:0},
+            {step:'Step 2', subject:'Re: What Does 99.999% Uptime Actually Look Like?', sent:3742, opens:1645, replies:5, interested:0},
+            {step:'Step 3', subject:'Re: What Does 99.999% Uptime Actually Look Like?', sent:4828, opens:2113, replies:13, interested:0},
+          ]
+        },
+        {
+          id: 'bs-c3', name: 'Campaign 3 — New Campaign', meta: 'Just launched',
+          status: 'new', listSize: 3829, sent: 0, contacted: 0,
+          totalOpens: 0, uniqueOpens: 0, replies: 0, delivery: 0,
+          conversions: 0, interested: 0, study: 0, progress: 0, warning: '', steps: []
+        }
+      ]
+    },
+    {
+      id: 'markforged', name: 'MarkForged',
+      campaigns: [{
+        id: 'mf-c1', name: 'NAICS Campaign', meta: 'May 11 – Jun 11, 2026',
+        status: 'active', listSize: 5639, sent: 12905, contacted: 5639,
+        totalOpens: 7189, uniqueOpens: 2826, replies: 84, delivery: 98.26,
+        conversions: 2, interested: 0, study: 757, progress: 94, warning: '',
+        steps: [
+          {step:'Step 1', subject:'$100 Gift Card + 20 Min — Worth It?', sent:1989, opens:889, replies:17, interested:0},
+          {step:'Step 1 V1', subject:'Stop Waiting on Parts — Earn $100 for 20 Min', sent:1893, opens:867, replies:16, interested:0},
+          {step:'Step 2', subject:'Re: $100 Gift Card + 20 Min — Worth It?', sent:2181, opens:986, replies:14, interested:0},
+          {step:'Step 2 V1', subject:'Re: $100 Gift Card + 20 Min — Worth It?', sent:2297, opens:1062, replies:13, interested:0},
+          {step:'Step 3', subject:'Re: $100 Gift Card + 20 Min — Worth It?', sent:2221, opens:964, replies:8, interested:0},
+          {step:'Step 3 V1', subject:'Re: $100 Gift Card + 20 Min — Worth It?', sent:2324, opens:1022, replies:16, interested:0},
+        ]
+      }]
+    },
+    {
+      id: 'frauddeflect', name: 'FraudDeflect',
+      campaigns: [{
+        id: 'fd-c1', name: 'Chargeback Recovery Campaign', meta: 'Last 60 days',
+        status: 'active', listSize: 1054, sent: 2245, contacted: 1054,
+        totalOpens: 950, uniqueOpens: 455, replies: 8, delivery: 82.81,
+        conversions: 0, interested: 0, study: 574, progress: 0,
+        warning: 'High bounce rate (36.94%) + unfilled {COMPANY} / {FIRST_NAME} tags in subject lines', flagged: true,
+        steps: [
+          {step:'Step 1', subject:'Recover 60-80% of your chargeback losses — free audit', sent:476, opens:183, replies:2, interested:0},
+          {step:'Step 1 V1', subject:'{COMPANY} is losing recoverable revenue to chargebacks...', sent:569, opens:219, replies:1, interested:0},
+          {step:'Step 2', subject:'The math behind 60-80% recovery — free audit + $100', sent:372, opens:148, replies:0, interested:0},
+          {step:'Step 2 V1', subject:"Re: {COMPANY}'s chargeback losses — why deflection recovers more", sent:365, opens:111, replies:3, interested:0},
+          {step:'Step 3', subject:'Last note: free revenue recovery audit + $100 if we miss', sent:219, opens:68, replies:1, interested:0},
+          {step:'Step 3 V1', subject:'Closing the loop on your MID risk, {FIRST_NAME}', sent:244, opens:67, replies:1, interested:0},
+        ]
+      }]
+    }
+  ]
+};
+
+function fmt(n){ return n ? Number(n).toLocaleString() : '0'; }
+function pct(a,b){ return b>0 ? (a/b*100).toFixed(2)+'%' : '0%'; }
+
+// ===================== RENDER =====================
+function render(){
+  const dash = document.getElementById('main-dashboard');
+  let totalSent=0,totalList=0,totalConv=0,totalReplies=0,totalVisitors=0,totalCamps=0;
+  DB.clients.forEach(cl => cl.campaigns.forEach(c => {
+    totalSent += c.sent||0; totalList += c.listSize||0;
+    totalConv += c.conversions||0; totalReplies += c.replies||0;
+    totalVisitors += c.study||0; totalCamps++;
+  }));
+
+  let html = `
+  <div class="section-label">Portfolio overview</div>
+  <div class="totals-strip">
+    <div class="total-item"><div class="total-val">${fmt(totalSent)}</div><div class="total-lbl">Total emails sent</div></div>
+    <div class="total-item"><div class="total-val">${fmt(totalList)}</div><div class="total-lbl">Total list size</div></div>
+    <div class="total-item"><div class="total-val">${fmt(totalConv)}</div><div class="total-lbl">Total conversions</div></div>
+    <div class="total-item"><div class="total-val">${fmt(totalReplies)}</div><div class="total-lbl">Unique replies</div></div>
+    <div class="total-item"><div class="total-val">${fmt(totalVisitors)}</div><div class="total-lbl">Study visitors</div></div>
+    <div class="total-item"><div class="total-val">${totalCamps}</div><div class="total-lbl">Active campaigns</div></div>
+  </div>
+  <div class="section-label">Client breakdown</div>
+  <div class="overview-grid">`;
+
+  DB.clients.forEach(cl => {
+    const c = cl.campaigns[0];
+    const isBad = c.flagged === true;
+    const openRate = c.contacted>0 ? (c.uniqueOpens/c.contacted*100).toFixed(2) : 0;
+    html += `<div class="overview-card ${isBad?'flag-bad':''}">
+      ${isBad?'<div class="flag-tag">⚠ Needs attention</div>':''}
+      <div class="ov-client" style="${isBad?'margin-top:.5rem;':''}">${cl.name} <span class="badge badge-${c.status}">${c.status==='active'?'Active':c.status==='paused'?'Paused':c.status==='completed'?'Completed':'New'}</span></div>`;
+    if(c.status==='new' && c.sent===0){
+      html += `<div class="placeholder-card" style="padding:.75rem;">Campaign in progress — stats coming soon</div>`;
+    } else {
+      html += `
+      <div class="ov-row"><span class="ov-label">List size</span><span class="ov-val">${fmt(c.listSize)}</span></div>
+      <div class="ov-row"><span class="ov-label">Emails sent</span><span class="ov-val">${fmt(c.sent)}</span></div>
+      <div class="ov-row"><span class="ov-label">Unique open rate</span><span class="ov-val">${openRate}%</span></div>
+      <div class="ov-row"><span class="ov-label">Reply rate</span><span class="ov-val">${pct(c.replies,c.sent)}</span></div>
+      <div class="ov-row"><span class="ov-label">Delivery rate</span><span class="ov-val ${c.delivery>=90?'ov-good':'ov-bad'}">${c.delivery}%</span></div>
+      <div class="ov-row"><span class="ov-label">Conversions</span><span class="ov-val">${c.conversions}</span></div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>
+  <div class="section-label">Client deep dive</div>
+  <div class="client-tabs">`;
+  DB.clients.forEach((cl,i) => {
+    const hasBad = cl.campaigns.some(c=>c.delivery>0&&c.delivery<87);
+    html += `<div class="tab ${i===0?'active':''} ${hasBad?'tab-bad':''}" onclick="showClient('${cl.id}',this)">${cl.name}${hasBad?' ⚠':''}</div>`;
+  });
+  html += `</div>`;
+
+  DB.clients.forEach((cl,i) => {
+    html += `<div id="panel-${cl.id}" class="client-panel ${i===0?'active':''}">`;
+    cl.campaigns.forEach(c => {
+      const isBad = c.flagged===true;
+      const openPct = c.contacted>0?(c.uniqueOpens/c.contacted*100).toFixed(2):0;
+      const totalOpenPct = c.sent>0?(c.totalOpens/c.sent*100).toFixed(2):0;
+      const replyPct = pct(c.replies,c.sent);
+      const bestStep = c.steps.length ? c.steps.reduce((a,b)=>b.replies>a.replies?b:a,c.steps[0]) : null;
+
+      html += `<div class="campaign-card ${isBad?'flag-bad':''}">`;
+      if(isBad) html += `<div class="flag-box-bad">⚠ Underperforming — delivery rate ${c.delivery}%. Review sender health and list quality.</div>`;
+
+      html += `<div class="campaign-header">
+        <div><div class="campaign-title">${c.name}</div><div class="campaign-meta">${c.meta}${c.listSize?' · List: '+fmt(c.listSize):''}</div></div>
+        <span class="badge badge-${c.status}">${c.status==='active'?'Active':c.status==='paused'?'Paused':c.status==='completed'?'Completed':'New / Launched'}</span>
+      </div>`;
+
+      if(c.progress>0){
+        html += `<div class="progress-wrap"><div class="progress-label"><span>Campaign progress</span><span>${c.progress}%</span></div><div class="progress-bg"><div class="progress-fill" style="width:${c.progress}%;"></div></div></div>`;
+      }
+
+      if(c.status==='new' && c.sent===0){
+        html += `<div class="placeholder-card">Campaign live — stats will populate as emails go out.</div>`;
+      } else {
+        html += `<div class="open-rate-row">
+          <div class="or-box"><div class="or-box-label">Total opens</div><div class="or-box-num">${fmt(c.totalOpens)}</div><div class="or-box-sub">${totalOpenPct}% of emails sent</div></div>
+          <div class="or-box"><div class="or-box-label">Unique opens</div><div class="or-box-num">${fmt(c.uniqueOpens)}</div><span class="or-box-pct">${openPct}%</span><div class="or-box-sub">of people contacted</div></div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-label">Emails sent</div><div class="metric-value">${fmt(c.sent)}</div></div>
+          <div class="metric"><div class="metric-label">People contacted</div><div class="metric-value">${fmt(c.contacted)}</div></div>
+          <div class="metric"><div class="metric-label">Unique replies</div><div class="metric-value">${fmt(c.replies)}</div><div class="metric-sub">${replyPct}</div></div>
+          <div class="metric"><div class="metric-label">Delivery rate</div><div class="metric-value ${c.delivery>=90?'m-good':'m-bad'}">${c.delivery}%</div></div>
+          ${c.interested?`<div class="metric"><div class="metric-label">Interested</div><div class="metric-value">${c.interested}</div></div>`:''}
+          <div class="metric"><div class="metric-label">Conversions</div><div class="metric-value">${c.conversions}</div></div>
+          ${c.study?`<div class="metric"><div class="metric-label">Study visitors</div><div class="metric-value">${fmt(c.study)}</div></div>`:''}
+        </div>`;
+
+        if(c.warning) html += `<div class="warn-box">⚠️ ${c.warning}</div>`;
+
+        if(c.steps.length){
+          html += `<hr class="divider"><div class="steps-label">Individual email steps</div>
+          <table class="step-table">
+            <thead><tr><th>Step</th><th>Subject</th><th>Sent</th><th>Uniq. opens</th><th>Replies</th><th>Interested</th></tr></thead><tbody>`;
+          c.steps.forEach(s => {
+            const isBest = bestStep && s===bestStep && s.replies>0;
+            html += `<tr class="${isBest?'best':''}">
+              <td>${s.step}</td>
+              <td class="subj">${s.subject}${isBest?'<span class="best-badge">BEST</span>':''}</td>
+              <td>${fmt(s.sent)}</td><td>${fmt(s.opens)}</td><td>${fmt(s.replies)}</td><td>${s.interested||0}</td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
+  dash.innerHTML = html;
+  populateAdminClients();
+}
+
+function showClient(id,el){
+  document.querySelectorAll('.client-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===================== ADMIN =====================
+function openAdmin(){ document.getElementById('admin-overlay').classList.add('open'); populateAdminClients(); }
+function closeAdmin(){ document.getElementById('admin-overlay').classList.remove('open'); }
+
+function switchAdminTab(id,el){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('admin-'+id).classList.add('active');
+  if(id==='campaign') populateClientSelect();
+}
+
+function populateAdminClients(){
+  const list = document.getElementById('client-list-admin');
+  list.innerHTML = DB.clients.map((cl,i) => `
+    <div class="client-list-item">
+      <span>${cl.name} <span style="color:#888;font-size:11px;">(${cl.campaigns.length} campaign${cl.campaigns.length>1?'s':''})</span></span>
+      <div>
+        <button onclick="editClientDirect('${cl.id}')">Edit campaigns</button>
+        <button class="del-btn" onclick="removeClient('${cl.id}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function editClientDirect(id){
+  switchAdminTab('campaign', document.querySelectorAll('.admin-tab')[1]);
+  populateClientSelect();
+  document.getElementById('edit-client-select').value = id;
+  loadClientCampaigns();
+}
+
+function removeClient(id){
+  if(!confirm('Remove this client from the dashboard?')) return;
+  DB.clients = DB.clients.filter(c=>c.id!==id);
+  render();
+  populateAdminClients();
+}
+
+function populateClientSelect(){
+  const sel = document.getElementById('edit-client-select');
+  sel.innerHTML = DB.clients.map(cl=>`<option value="${cl.id}">${cl.name}</option>`).join('');
+  loadClientCampaigns();
+}
+
+function loadClientCampaigns(){
+  const clientId = document.getElementById('edit-client-select').value;
+  const client = DB.clients.find(c=>c.id===clientId);
+  const campSel = document.getElementById('edit-campaign-select');
+  if(!client){ campSel.innerHTML=''; return; }
+  campSel.innerHTML = client.campaigns.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  loadCampaignForm();
+}
+
+let editingCamp = null;
+function loadCampaignForm(){
+  const clientId = document.getElementById('edit-client-select').value;
+  const campId = document.getElementById('edit-campaign-select').value;
+  const client = DB.clients.find(c=>c.id===clientId);
+  if(!client) return;
+  const camp = client.campaigns.find(c=>c.id===campId);
+  if(!camp) return;
+  editingCamp = {clientId, campId};
+
+  document.getElementById('ef-name').value = camp.name;
+  document.getElementById('ef-status').value = camp.status;
+  document.getElementById('ef-list').value = camp.listSize||'';
+  document.getElementById('ef-sent').value = camp.sent||'';
+  document.getElementById('ef-contacted').value = camp.contacted||'';
+  document.getElementById('ef-totalopens').value = camp.totalOpens||'';
+  document.getElementById('ef-uniqueopens').value = camp.uniqueOpens||'';
+  document.getElementById('ef-replies').value = camp.replies||'';
+  document.getElementById('ef-delivery').value = camp.delivery||'';
+  document.getElementById('ef-conversions').value = camp.conversions||'';
+  document.getElementById('ef-interested').value = camp.interested||'';
+  document.getElementById('ef-study').value = camp.study||'';
+  document.getElementById('ef-progress').value = camp.progress||'';
+  document.getElementById('ef-warning').value = camp.warning||'';
+  document.getElementById('ef-flag').checked = camp.flagged||false;
+
+  const stepsDiv = document.getElementById('steps-forms');
+  stepsDiv.innerHTML = '';
+  camp.steps.forEach((s,i) => addStepForm(s,i));
+
+  document.getElementById('campaign-edit-form').style.display = 'block';
+  document.getElementById('camp-success').style.display = 'none';
+}
+
+let stepCount = 0;
+function addStepForm(data={}, idx=null){
+  stepCount++;
+  const id = 'step-'+stepCount;
+  const div = document.createElement('div');
+  div.className = 'step-form';
+  div.id = id;
+  div.innerHTML = `
+    <button class="step-remove" onclick="document.getElementById('${id}').remove()">✕</button>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Step label</label><input class="form-input step-label" value="${data.step||''}"></div>
+      <div class="form-group"><label class="form-label">Subject line</label><input class="form-input step-subject" value="${data.subject||''}"></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">Sent</label><input class="form-input step-sent" type="number" value="${data.sent||''}"></div>
+      <div class="form-group"><label class="form-label">Unique opens</label><input class="form-input step-opens" type="number" value="${data.opens||''}"></div>
+      <div class="form-group"><label class="form-label">Replies</label><input class="form-input step-replies" type="number" value="${data.replies||''}"></div>
+    </div>`;
+  document.getElementById('steps-forms').appendChild(div);
+}
+
+function saveCampaign(){
+  if(!editingCamp) return;
+  const client = DB.clients.find(c=>c.id===editingCamp.clientId);
+  const camp = client.campaigns.find(c=>c.id===editingCamp.campId);
+
+  camp.name = document.getElementById('ef-name').value;
+  camp.status = document.getElementById('ef-status').value;
+  camp.listSize = +document.getElementById('ef-list').value||0;
+  camp.sent = +document.getElementById('ef-sent').value||0;
+  camp.contacted = +document.getElementById('ef-contacted').value||0;
+  camp.totalOpens = +document.getElementById('ef-totalopens').value||0;
+  camp.uniqueOpens = +document.getElementById('ef-uniqueopens').value||0;
+  camp.replies = +document.getElementById('ef-replies').value||0;
+  camp.delivery = +document.getElementById('ef-delivery').value||0;
+  camp.conversions = +document.getElementById('ef-conversions').value||0;
+  camp.interested = +document.getElementById('ef-interested').value||0;
+  camp.study = +document.getElementById('ef-study').value||0;
+  camp.progress = +document.getElementById('ef-progress').value||0;
+  camp.warning = document.getElementById('ef-warning').value;
+  camp.flagged = document.getElementById('ef-flag').checked;
+
+  camp.steps = [];
+  document.querySelectorAll('.step-form').forEach(div => {
+    camp.steps.push({
+      step: div.querySelector('.step-label').value,
+      subject: div.querySelector('.step-subject').value,
+      sent: +div.querySelector('.step-sent').value||0,
+      opens: +div.querySelector('.step-opens').value||0,
+      replies: +div.querySelector('.step-replies').value||0,
+      interested: 0
+    });
+  });
+
+  render();
+  document.getElementById('camp-success').style.display = 'block';
+  setTimeout(()=>document.getElementById('camp-success').style.display='none', 3000);
+}
+
+function addNewClient(){
+  const name = document.getElementById('nc-name').value.trim();
+  if(!name) return;
+  const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  DB.clients.push({
+    id, name,
+    campaigns:[{
+      id: id+'-c1', name:'New Campaign', meta:'Coming soon',
+      status: document.getElementById('nc-status').value,
+      listSize:0, sent:0, contacted:0, totalOpens:0, uniqueOpens:0,
+      replies:0, delivery:0, conversions:0, interested:0, study:0, progress:0, warning:'', steps:[]
+    }]
+  });
+  document.getElementById('nc-name').value='';
+  document.getElementById('nc-success').style.display='block';
+  setTimeout(()=>document.getElementById('nc-success').style.display='none',3000);
+  render();
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
